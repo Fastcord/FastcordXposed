@@ -5,15 +5,15 @@ plugins {
 }
 
 android {
-    namespace = "io.github.pyoncord.xposed"
+    namespace = "software.revolution.xposed"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "io.github.pyoncord.xposed"
+        applicationId = "software.revolution.xposed"
         minSdk = 24
         targetSdk = 35
-        versionCode = 300
-        versionName = "0.3.0"
+        versionCode = 100
+        versionName = "0.1.0"
     }
 
     buildTypes {
@@ -44,6 +44,6 @@ dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
-    implementation("io.ktor:ktor-client-core:3.1.1")
-    implementation("io.ktor:ktor-client-cio:3.1.1")
+    implementation("io.ktor:ktor-client-core:2.3.4")
+    implementation("io.ktor:ktor-client-okhttp:2.3.4")
 }

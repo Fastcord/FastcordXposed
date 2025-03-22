@@ -1,4 +1,4 @@
-package io.github.pyoncord.xposed
+package software.revolution.xposed
 
 import android.app.AlertDialog
 import android.app.AndroidAppHelper
@@ -12,7 +12,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage
 import java.io.File
 import kotlin.system.exitProcess
 
-class LogBoxModule: PyonModule() {
+class LogBoxModule: FastcordModule() {
     lateinit var packageParam: XC_LoadPackage.LoadPackageParam
 
     override fun onInit(packageParam: XC_LoadPackage.LoadPackageParam) = with (packageParam) {
@@ -59,7 +59,7 @@ class LogBoxModule: PyonModule() {
                             }
                         }
                     } catch (ex: Exception) {
-                        Log.e("Bunny", "Failed to show dev options dialog: $ex")
+                        Log.e("Fastcord", "Failed to show dev options dialog: $ex")
                         alertDialog = null
                     }
 
@@ -84,14 +84,14 @@ class LogBoxModule: PyonModule() {
 
     private fun showRecoveryAlert(context: Context, onClose: () -> Unit): AlertDialog {
         return AlertDialog.Builder(context)
-            .setTitle("Bunny Recovery Options")
+            .setTitle("Fastcord Recovery Options")
             .setItems(arrayOf("Reload", "Delete bundle.js")) { _, which ->
                 when (which) {
                     0 -> {
                         reloadApp()
                     }
                     1 -> {
-                        val bundleFile = File(packageParam.appInfo.dataDir, "cache/pyoncord/bundle.js")
+                        val bundleFile = File(packageParam.appInfo.dataDir, "cache/fastcord/bundle.js")
                         if (bundleFile.exists()) {
                             bundleFile.delete()
                         }

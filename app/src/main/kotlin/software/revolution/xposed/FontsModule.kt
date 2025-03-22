@@ -1,7 +1,7 @@
 // credits to janisslsm from his PR: https://github.com/vendetta-mod/VendettaXposed/pull/17
 // hooks are modified function from RN codebase
 
-package io.github.pyoncord.xposed
+package software.revolution.xposed
 
 import android.content.res.AssetManager
 import android.os.Build
@@ -22,7 +22,7 @@ import kotlinx.coroutines.*
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
-import io.ktor.client.engine.cio.*
+import io.ktor.client.engine.okhttp.*
 import io.ktor.client.statement.*
 import io.ktor.client.plugins.*
 import io.ktor.http.*
@@ -35,7 +35,7 @@ data class FontDefinition(
     val main: Map<String, String>,
 )
 
-class FontsModule: PyonModule() {
+class FontsModule: FastcordModule() {
     private val EXTENSIONS = arrayOf("", "_bold", "_italic", "_bold_italic")
     private val FILE_EXTENSIONS = arrayOf(".ttf", ".otf")
     private val FONTS_ASSET_PATH = "fonts/"
@@ -63,7 +63,7 @@ class FontsModule: PyonModule() {
                 }
             })
 
-        val fontDefFile = File(appInfo.dataDir, "files/pyoncord/fonts.json")
+        val fontDefFile = File(appInfo.dataDir, "files/fastcord/fonts.json")
         if (!fontDefFile.exists()) return@with
 
         val fontDef = try {
@@ -71,7 +71,7 @@ class FontsModule: PyonModule() {
             json.decodeFromString<FontDefinition>(fontDefFile.readText())
         } catch (_: Throwable) { return@with }
 
-        fontsDownloadsDir = File(appInfo.dataDir, "files/pyoncord/downloads/fonts").apply { mkdirs() }
+        fontsDownloadsDir = File(appInfo.dataDir, "files/fastcord/downloads/fonts").apply { mkdirs() }
         fontsDir = File(fontsDownloadsDir, fontDef.name!!).apply { mkdirs() }
         fontsAbsPath = fontsDir.absolutePath + "/"
 
@@ -80,7 +80,7 @@ class FontsModule: PyonModule() {
             if (!fileName.startsWith(".")) {
                 val fontName = fileName.split('.')[0]
                 if (fontDef.main.keys.none { it == fontName }) {
-                    Log.i("Bunny", "Deleting font file: $fileName")
+                    Log.i("Fastcord", "Deleting font file: $fileName")
                     file.delete()
                 }
             }
@@ -92,12 +92,13 @@ class FontsModule: PyonModule() {
                 async {
                     val url = fontDef.main.getValue(name)
                     try {
-                        Log.i("Bunny", "Downloading $name from $url")
+                        Log.i("Fastcord", "Downloading $name from $url")
                         val file = File(fontsDir, "$name${FILE_EXTENSIONS.first { url.endsWith(it) }}")
                         if (file.exists()) return@async
 
-                        val client = HttpClient(CIO) {
-                            install(UserAgent) { agent = "BunnyXposed" }
+                        // Using OkHttp engine instead of CIO to avoid classloader conflicts
+                        val client = HttpClient(OkHttp) {
+                            install(UserAgent) { agent = "FastcordXposed" }
                         }
 
                         val response: HttpResponse = client.get(url)
@@ -108,7 +109,7 @@ class FontsModule: PyonModule() {
 
                         return@async
                     } catch (e: Throwable) {
-                        Log.e("Bunny", "Failed to download fonts ($name from $url)", e)
+                        Log.e("Fastcord", "Failed to download fonts ($name from $url)", e)
                     }
                 }
             }.awaitAll()

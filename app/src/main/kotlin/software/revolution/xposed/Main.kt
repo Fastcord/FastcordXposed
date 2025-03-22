@@ -1,4 +1,4 @@
-package io.github.pyoncord.xposed
+package software.revolution.xposed
 
 import android.app.Activity
 import android.content.res.AssetManager
@@ -13,7 +13,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
-import io.ktor.client.engine.cio.*
+import io.ktor.client.engine.okhttp.*
 import io.ktor.client.statement.*
 import io.ktor.client.plugins.*
 import io.ktor.http.*
@@ -34,7 +34,7 @@ data class LoaderConfig(
 )
 
 class Main : IXposedHookLoadPackage {
-    private val pyonModules: Array<PyonModule> = arrayOf(
+    private val modules: Array<FastcordModule> = arrayOf(
         ThemeModule(),
         SysColorsModule(),
         FontsModule(),
@@ -43,10 +43,10 @@ class Main : IXposedHookLoadPackage {
 
     fun buildLoaderJsonString(): String {
         val obj = buildJsonObject {
-            put("loaderName", "BunnyXposed")
+            put("loaderName", "FastcordXposed")
             put("loaderVersion", BuildConfig.VERSION_NAME)
 
-            for (module in pyonModules) {
+            for (module in modules) {
                 module.buildJson(this)
             }
         }
@@ -82,7 +82,7 @@ class Main : IXposedHookLoadPackage {
     ) = with (param) {
         val catalystInstanceImpl = classLoader.loadClass("com.facebook.react.bridge.CatalystInstanceImpl")
 
-        for (module in pyonModules) module.onInit(param)
+        for (module in modules) module.onInit(param)
 
         val loadScriptFromAssets = catalystInstanceImpl.getDeclaredMethod(
             "loadScriptFromAssets",
@@ -104,8 +104,8 @@ class Main : IXposedHookLoadPackage {
             String::class.java
         ).apply { isAccessible = true }
 
-        val cacheDir = File(appInfo.dataDir, "cache/pyoncord").apply { mkdirs() }
-        val filesDir = File(appInfo.dataDir, "files/pyoncord").apply { mkdirs() }
+        val cacheDir = File(appInfo.dataDir, "cache/fastcord").apply { mkdirs() }
+        val filesDir = File(appInfo.dataDir, "files/fastcord").apply { mkdirs() }
 
         val preloadsDir = File(filesDir, "preloads").apply { mkdirs() }
         val bundle = File(cacheDir, "bundle.js")
@@ -129,27 +129,29 @@ class Main : IXposedHookLoadPackage {
         val scope = MainScope()
         val httpJob = scope.async(Dispatchers.IO) {
             try {
-                val client = HttpClient(CIO) {
+                val client = HttpClient(OkHttp) {
                     expectSuccess = true
                     install(HttpTimeout) {
                         requestTimeoutMillis = if (bundle.exists()) 5000 else 10000
                     }
-                    install(UserAgent) { agent = "BunnyXposed" }
+                    install(UserAgent) { agent = "FastcordXposed" }
                 }
 
-                val url = 
-                    if (config.customLoadUrl.enabled) config.customLoadUrl.url 
-                    else "https://raw.githubusercontent.com/pyoncord/detta-builds/main/bunny.min.js"
+                val url =
+                    if (config.customLoadUrl.enabled) config.customLoadUrl.url
+                    else "https://raw.githubusercontent.com/Fastcord/builds/refs/heads/main/fastcord.js"
 
-                Log.e("Bunny", "Fetching JS bundle from $url")
+                Log.w("Fastcord", "Fetching JS bundle from $url")
                 
                 val response: HttpResponse = client.get(url) {
-                    headers { 
+                    headers {
                         if (etag.exists() && bundle.exists()) {
                             append(HttpHeaders.IfNoneMatch, etag.readText())
                         }
                     }
                 }
+
+                Log.e("Fastcord", "Fetched JS bundle from $url")
 
                 bundle.writeBytes(response.body())
                 if (response.headers["Etag"] != null) {
@@ -163,19 +165,19 @@ class Main : IXposedHookLoadPackage {
                 return@async
             } catch (e: RedirectResponseException) {
                 if (e.response.status != HttpStatusCode.NotModified) throw e
-                Log.e("Bunny", "Server responded with status code 304 - no changes to file")
+                Log.e("Fastcord", "Server responded with status code 304 - no changes to file")
             } catch (e: Throwable) {
                 onActivityCreate { activity ->
                     activity.runOnUiThread {
                         Toast.makeText(
                             activity.applicationContext,
-                            "Failed to fetch JS bundle, Bunny may not load!",
+                            "Failed to fetch JS bundle, Fastcord may not load!",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
                 }
 
-                Log.e("Bunny", "Failed to download bundle", e)
+                Log.e("Fastcord", "Failed to download bundle", e)
             }
         }
 
@@ -186,7 +188,7 @@ class Main : IXposedHookLoadPackage {
                 XposedBridge.invokeOriginalMethod(
                     setGlobalVariable, 
                     param.thisObject, 
-                    arrayOf("__PYON_LOADER__", buildLoaderJsonString())
+                    arrayOf("__FASTCORD_LOADER__", buildLoaderJsonString())
                 )
 
                 preloadsDir

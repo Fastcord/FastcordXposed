@@ -1,4 +1,4 @@
-package io.github.pyoncord.xposed
+package software.revolution.xposed
 
 import android.content.Context
 import android.graphics.Color
@@ -8,8 +8,6 @@ import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 import kotlinx.serialization.json.*
@@ -35,7 +33,7 @@ data class Theme(
     val data: ThemeData
 )
 
-class ThemeModule : PyonModule() {
+class ThemeModule : FastcordModule() {
     private lateinit var param: XC_LoadPackage.LoadPackageParam
 
     private var theme: Theme? = null
@@ -67,8 +65,8 @@ class ThemeModule : PyonModule() {
 
     private fun getTheme(): Theme? {
         val filesDir = File(param.appInfo.dataDir, "files").apply { mkdirs() }
-        val pyonDir = File(filesDir, "pyoncord").apply { mkdirs() }
-        val themeFile = File(pyonDir, "current-theme.json")
+        val fastcordDir = File(filesDir, "fastcord").apply { mkdirs() }
+        val themeFile = File(fastcordDir, "current-theme.json")
 
         val legacyThemeFile = File(filesDir, "vendetta_theme.json")
         if (legacyThemeFile.isValidish() && !themeFile.isValidish()) {
